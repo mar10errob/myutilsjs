@@ -23,9 +23,13 @@ router.post('/', function(req, res) {
 
 	form.parse(req, (err, fields, files) => {
 
+		var file_name = files.file.path.replace(uploadDir,"");
+
+		console.log("parse", file_name)
+
 		if (err) return res.status(500).json({ error: err })
 
-		res.status(200).json({ uploaded: true })
+		res.status(200).json({ uploaded: true, url: "http://localhost:3000/uploads/" + file_name })
 
 	})
 
@@ -33,9 +37,36 @@ router.post('/', function(req, res) {
 
 		const [fileName, fileExt] = file.name.split('.')
 
-		file.path = path.join(uploadDir, `${md5(fileName)}_${new Date().getTime()}.${fileExt}`)
+		let nameFile = `${md5(fileName)}_${new Date().getTime()}.${fileExt}`;
 
+		file.path = path.join(uploadDir, nameFile)
 	})
+
+	form.on('file', function(name, file) {
+		console.log("onFile", file.name);
+	});
+});
+
+router.get('/file/:name', function (req, res, next) {
+
+  var options = {
+    root: __dirname + '/../images/',
+    dotfiles: 'deny',
+    headers: {
+        'x-timestamp': Date.now(),
+        'x-sent': true
+    }
+  };
+
+  var fileName = req.params.name;
+  res.sendFile(fileName, options, function (err) {
+    if (err) {
+      next(err);
+    } else {
+      console.log('Sent:', fileName);
+    }
+  });
+
 });
 
 module.exports = router;
